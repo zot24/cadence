@@ -8,8 +8,10 @@ struct NewAgentJobView: View {
     @Bindable var model: AppModel
     @Environment(\.dismiss) private var dismiss
 
+    private static let lastModelKey = "com.cadence.lastModel"
+
     @State private var name = ""
-    @State private var modelID = FlueScaffold.defaultModel
+    @State private var modelID = UserDefaults.standard.string(forKey: NewAgentJobView.lastModelKey) ?? FlueScaffold.defaultModel
     @State private var instructions = ""
     @State private var cronExpr = "0 9 * * *"
 
@@ -117,6 +119,7 @@ struct NewAgentJobView: View {
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("Create Agent Job") {
                     if let url = targetURL {
+                        UserDefaults.standard.set(modelID, forKey: NewAgentJobView.lastModelKey)
                         model.createAgentJob(project: url, name: name, model: modelID,
                                              instructions: instructions, schedule: cronExpr,
                                              scaffoldWorkspace: needsSetup)
