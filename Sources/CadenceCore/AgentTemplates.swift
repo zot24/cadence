@@ -52,6 +52,12 @@ public enum AgentTemplates {
             suggestedCron: "0 7 * * *",
             symbol: "externaldrive.badge.checkmark"),
         AgentTemplate(
+            title: "Fleet monitor",
+            name: "fleet-monitor",
+            instructions: "Run the shell command `Cadence --report` to inspect my scheduled jobs. If any are failing or at risk, write a short plain-English summary of what's wrong and what to check first; otherwise report that everything is healthy.",
+            suggestedCron: "0 */6 * * *",
+            symbol: "waveform.path.ecg"),
+        AgentTemplate(
             title: "Spend watcher",
             name: "spend-watcher",
             instructions: "Summarize my agent and API spend over the last 24 hours. Warn me if it is trending above budget and identify which job is driving the cost.",
