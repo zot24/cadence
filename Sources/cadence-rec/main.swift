@@ -134,6 +134,9 @@ let finished = Date()
 let durationMS = Int(finished.timeIntervalSince(started) * 1000)
 store.finishRun(id: runID, finishedAt: finished, exitCode: Int(exitCode), durationMS: durationMS)
 
+// Keep this job's log directory bounded (current run is the newest, so kept).
+LogPruner.prune(directory: logDir, keepRuns: 100)
+
 // Parse semantic usage (model / tokens / cost) the agent may have reported —
 // agent runs are about what the model did, not just the exit code.
 let outText = (try? String(contentsOf: stdoutURL, encoding: .utf8)) ?? ""
