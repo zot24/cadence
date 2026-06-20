@@ -18,6 +18,12 @@ final class ProvenanceTests: XCTestCase {
         XCTAssertEqual(JobProvenance.classify(cron("codex exec 'do thing'")), .aiAgent)
     }
 
+    func testMoreLocalAgents() {
+        XCTAssertEqual(JobProvenanceDetector.detect(cron("aider --message x")).tool, "Aider")
+        XCTAssertEqual(JobProvenanceDetector.detect(cron("opencode run task")).tool, "OpenCode")
+        XCTAssertEqual(JobProvenance.classify(cron("/opt/homebrew/bin/aider")), .aiAgent)
+    }
+
     func testAutomation() {
         XCTAssertEqual(JobProvenance.classify(cron("shortcuts run 'Backup'")), .automation)
     }
