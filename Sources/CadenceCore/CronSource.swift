@@ -88,15 +88,22 @@ public enum CronSource {
 
     private static func parseJobLine(_ rawLine: String, markerID: String?) -> Job? {
         let line = rawLine.trimmingCharacters(in: .whitespaces)
-        var scheduleExpr: String
+        var scheduleExpr: String?
+        var specialSummary: String?
         var command: String
 
         if line.hasPrefix("@") {
-            // @shortcut command
+            // @shortcut command — mapped to 5-field, or a non-recurring special.
             let parts = line.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true)
-            guard parts.count == 2, let mapped = shortcuts[String(parts[0]).lowercased()] else { return nil }
-            scheduleExpr = mapped
+            guard parts.count == 2 else { return nil }
+            let token = String(parts[0]).lowercased()
             command = String(parts[1])
+            if let mapped = shortcuts[token] {
+                scheduleExpr = mapped
+            } else {
+                // @reboot and friends: keep the job, but it has no recurring cron expression.
+                specialSummary = token == "@reboot" ? "At startup" : token
+            }
         } else {
             // 5 schedule fields then the command.
             let fields = splitFields(line, count: 5)
@@ -119,10 +126,12 @@ public enum CronSource {
         let (displayCommand, recordedID) = unwrapRecorder(command)
         let id = inlineID ?? markerID ?? recordedID ?? "cron:" + sha(displayCommand)
 
-        let schedule = JobSchedule(
-            cronExpression: scheduleExpr,
-            summary: CronHumanizer.describe(scheduleExpr)
-        )
+        let schedule: JobSchedule
+        if let expr = scheduleExpr {
+            schedule = JobSchedule(cronExpression: expr, summary: CronHumanizer.describe(expr))
+        } else {
+            schedule = JobSchedule(summary: specialSummary ?? "On demand")
+        }
         return Job(
             id: id.hasPrefix("cron:") ? id : "cron:" + id,
             source: .cron,

@@ -54,6 +54,14 @@ final class CronTests: XCTestCase {
         XCTAssertEqual(parsed.jobs.first?.schedule.summary, "Every 15 minutes")
     }
 
+    func testRebootJobNotDropped() {
+        let parsed = CronSource.parse("@reboot /usr/local/bin/startup.sh\n*/5 * * * * /bin/echo hi")
+        XCTAssertEqual(parsed.jobs.count, 2)   // @reboot job is kept, not silently dropped
+        let reboot = parsed.jobs.first { $0.command.contains("startup.sh") }
+        XCTAssertEqual(reboot?.schedule.summary, "At startup")
+        XCTAssertNil(reboot?.schedule.cronExpression)
+    }
+
     func testAgentHeuristic() {
         XCTAssertTrue(AgentHeuristics.looksAgentCreated(command: "npx flue run hello-world"))
         XCTAssertFalse(AgentHeuristics.looksAgentCreated(command: "/usr/bin/backup.sh"))
