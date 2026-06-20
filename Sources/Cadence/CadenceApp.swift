@@ -45,7 +45,12 @@ struct CadenceApp: App {
         MenuBarExtra {
             MenuBarView(model: model)
         } label: {
-            Image(systemName: model.failingCount > 0 ? "calendar.badge.exclamationmark" : "calendar.badge.clock")
+            // Show the failing-job count in the menu bar when something needs attention.
+            if model.failingCount > 0 {
+                Label("\(model.failingCount)", systemImage: "calendar.badge.exclamationmark")
+            } else {
+                Image(systemName: "calendar.badge.clock")
+            }
         }
         .menuBarExtraStyle(.window)
     }
