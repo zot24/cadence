@@ -61,7 +61,10 @@ final class AppModel {
     var filter: JobFilter = .all
     var selectedJobID: String?
     var searchText: String = ""
-    var sortKey: JobSort = .name
+    private static let sortKeyDefault = "com.cadence.sortKey"
+    var sortKey: JobSort = JobSort(rawValue: UserDefaults.standard.string(forKey: AppModel.sortKeyDefault) ?? "") ?? .name {
+        didSet { UserDefaults.standard.set(sortKey.rawValue, forKey: Self.sortKeyDefault) }
+    }
 
     // Sheets
     var showingNewCron = false
