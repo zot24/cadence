@@ -14,6 +14,13 @@ final class CronTests: XCTestCase {
         XCTAssertEqual(CronHumanizer.describe("0 * * * *"), "Every hour")
     }
 
+    func testWeekdayRanges() {
+        XCTAssertTrue(CronHumanizer.describe("0 9 * * 1-5").contains("weekdays"))
+        XCTAssertTrue(CronHumanizer.describe("0 9 * * 0,6").contains("weekends"))
+        XCTAssertTrue(CronHumanizer.describe("0 9 * * 1-3").contains("Monday-Wednesday"))
+        XCTAssertTrue(CronHumanizer.describe("30 8 * * mon-fri").contains("Monday-Friday"))
+    }
+
     func testParseAndMatch() {
         guard let expr = CronExpression("30 9 * * 1") else { return XCTFail("parse failed") }
         var comps = DateComponents()

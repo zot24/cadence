@@ -165,13 +165,22 @@ public enum CronHumanizer {
     }
 
     private static func weekdayString(_ field: String) -> String {
+        // Common idioms first.
+        if field == "1-5" { return "weekdays" }
+        if ["0,6", "6,0", "0,7", "6,7", "7,6"].contains(field) { return "weekends" }
+
         let names = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
         let map: [String: Int] = ["sun": 0, "mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6]
-        let tokens = field.split(separator: ",").map(String.init)
-        let resolved: [String] = tokens.compactMap { tok in
+        func nameFor(_ tok: String) -> String? {
             if let n = Int(tok) { let i = n == 7 ? 0 : n; return (0...6).contains(i) ? names[i] : nil }
-            if let n = map[tok.lowercased()] { return names[n] }
-            return tok
+            return map[tok.lowercased()].map { names[$0] }
+        }
+        let resolved: [String] = field.split(separator: ",").map(String.init).map { tok in
+            if let dash = tok.firstIndex(of: "-"),
+               let a = nameFor(String(tok[..<dash])), let b = nameFor(String(tok[tok.index(after: dash)...])) {
+                return "\(a)-\(b)"
+            }
+            return nameFor(tok) ?? tok
         }
         return resolved.isEmpty ? field : resolved.joined(separator: ", ")
     }
