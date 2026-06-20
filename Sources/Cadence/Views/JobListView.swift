@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import CadenceCore
 
 struct JobListView: View {
@@ -57,6 +58,10 @@ struct JobListView: View {
         }
         if job.plistPath != nil {
             Button("Reveal in Finder", systemImage: "folder") { model.revealInFinder(job) }
+        }
+        Button("Copy Command", systemImage: "doc.on.doc") {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(job.command, forType: .string)
         }
         Divider()
         Button("Delete…", systemImage: "trash", role: .destructive) { model.delete(job) }
