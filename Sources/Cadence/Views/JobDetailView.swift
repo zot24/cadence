@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import CadenceCore
 
 struct JobDetailView: View {
@@ -442,12 +443,24 @@ struct JobDetailView: View {
         let text = model.logText(at: path)
         section("Logs") {
             VStack(alignment: .leading, spacing: 8) {
-                Picker("", selection: $logStream) {
-                    ForEach(LogStream.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                HStack {
+                    Picker("", selection: $logStream) {
+                        ForEach(LogStream.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(maxWidth: 220)
+                    Spacer()
+                    Button { if let path { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) } } label: {
+                        Image(systemName: "folder")
+                    }
+                    .help("Reveal log file in Finder").disabled(path == nil)
+                    Button {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(text, forType: .string)
+                    } label: { Image(systemName: "doc.on.doc") }
+                    .help("Copy log to clipboard").disabled(text.isEmpty)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(maxWidth: 220)
 
                 ScrollView {
                     Text(text.isEmpty ? "— no output —" : text)
