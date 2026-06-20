@@ -1,0 +1,14 @@
+.DS_Store
+.build/
+build/
+*.app
+*.xcodeproj
+.swiftpm/
+DerivedData/
+*.db
+*.db-wal
+*.db-shm
+node_modules/
+
+# Claude Code session state
+.claude/
