@@ -77,6 +77,19 @@ struct SettingsView: View {
                 }
                 Text("Kills the job’s whole process tree on timeout — so a hung agent and any subprocesses it spawned stop making calls. Applies to tracked jobs.")
                     .font(.caption).foregroundStyle(.secondary)
+
+                Divider().padding(.vertical, 4)
+
+                Text("Storage")
+                    .font(.subheadline.weight(.semibold))
+                Button {
+                    NSWorkspace.shared.activateFileViewerSelecting([CadencePaths.supportDirectory])
+                } label: {
+                    Label("Reveal Data Folder", systemImage: "folder")
+                }
+                .font(.caption)
+                Text("Run history (cadence.db), the recorder shim, and per-run logs live here.")
+                    .font(.caption2).foregroundStyle(.secondary)
             }
             .padding()
 
