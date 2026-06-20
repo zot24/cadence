@@ -36,6 +36,11 @@ struct CadenceApp: App {
                     .keyboardShortcut("n", modifiers: [.command, .shift])
             }
             CommandGroup(after: .toolbar) {
+                Button("Run Selected Job") {
+                    if let job = model.selectedRecord?.job { model.runNow(job) }
+                }
+                .keyboardShortcut(.return, modifiers: .command)
+                .disabled(model.selectedRecord == nil)
                 Button("Activity…") { model.showingActivity = true; openMain() }
                     .keyboardShortcut("l")
                 Button("Refresh") { model.refresh() }
