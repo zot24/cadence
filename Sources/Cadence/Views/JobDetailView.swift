@@ -337,6 +337,15 @@ struct JobDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(10)
                 .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                .overlay(alignment: .topTrailing) {
+                    Button {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(job.command, forType: .string)
+                    } label: { Image(systemName: "doc.on.doc") }
+                    .buttonStyle(.borderless)
+                    .padding(6)
+                    .help("Copy command")
+                }
         }
     }
 
