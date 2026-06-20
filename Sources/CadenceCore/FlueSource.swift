@@ -88,7 +88,8 @@ public enum FlueSource {
     /// copy classified as a Flue job (with the agent name pulled out).
     public static func enrich(_ job: Job) -> Job {
         let cmd = job.command.lowercased()
-        guard cmd.contains("flue run") || cmd.contains("flue connect") || cmd.contains("flue workflow") else {
+        guard cmd.contains("flue run") || cmd.contains("flue connect")
+            || cmd.contains("flue workflow") || cmd.contains("@flue/cli") else {
             return job
         }
         var enriched = job
