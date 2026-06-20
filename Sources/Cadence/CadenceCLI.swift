@@ -5,6 +5,8 @@ import CadenceCore
 /// or script the scheduled-job fleet (including agent provenance + risk) without
 /// opening the GUI; also doubles as a smoke test of the full load pipeline.
 enum CadenceCLI {
+    static let version = "0.1.0"
+
     static func run(json: Bool) {
         guard let repo = try? JobRepository() else {
             FileHandle.standardError.write(Data("cadence: could not open store\n".utf8)); exit(1)

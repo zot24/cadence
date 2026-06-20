@@ -7,6 +7,7 @@ import CadenceCore
 enum CadenceEntry {
     static func main() {
         let args = CommandLine.arguments
+        if args.contains("--version") || args.contains("-v") { print("Cadence \(CadenceCLI.version)"); exit(0) }
         if args.contains("--help") || args.contains("-h") { CadenceCLI.printUsage(); exit(0) }
         if args.contains("--check") { CadenceCLI.check() }   // exits with health status
         if args.contains("--report") || args.contains("--json") {
