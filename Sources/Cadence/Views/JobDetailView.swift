@@ -126,6 +126,11 @@ struct JobDetailView: View {
 
             Spacer()
 
+            if let proj = job.flueProjectPath {
+                Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: proj)]) } label: {
+                    Image(systemName: "folder.badge.gearshape")
+                }.help("Open the Flue project folder")
+            }
             if JobRepository.canEditEnv(job) {
                 Button { showingEnv = true } label: {
                     Image(systemName: "key")
