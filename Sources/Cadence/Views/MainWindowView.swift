@@ -37,6 +37,15 @@ struct MainWindowView: View {
                 .help("Add a new scheduled job")
 
                 Menu {
+                    Picker("Sort by", selection: $model.sortKey) {
+                        ForEach(JobSort.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                } label: {
+                    Label("Sort", systemImage: "arrow.up.arrow.down")
+                }
+                .help("Sort jobs")
+
+                Menu {
                     let n = model.untrackedAgentJobs.count
                     Button("Track All Agent Jobs (\(n))") { model.bulkTrackAgents() }
                         .disabled(n == 0)

@@ -2,6 +2,12 @@ import SwiftUI
 import Observation
 import CadenceCore
 
+/// Job-list sort options.
+enum JobSort: String, CaseIterable, Identifiable {
+    case name = "Name", source = "Source", lastRun = "Last Run", runs = "Runs", cost = "Cost"
+    var id: String { rawValue }
+}
+
 /// Sidebar filter categories.
 enum JobFilter: Hashable, Identifiable {
     case all
@@ -55,6 +61,7 @@ final class AppModel {
     var filter: JobFilter = .all
     var selectedJobID: String?
     var searchText: String = ""
+    var sortKey: JobSort = .name
 
     // Sheets
     var showingNewCron = false
@@ -106,6 +113,13 @@ final class AppModel {
             items = items.filter {
                 $0.job.label.lowercased().contains(q) || $0.job.command.lowercased().contains(q)
             }
+        }
+        switch sortKey {
+        case .name:    items.sort { $0.job.label.localizedCaseInsensitiveCompare($1.job.label) == .orderedAscending }
+        case .source:  items.sort { ($0.job.source.rawValue, $0.job.label) < ($1.job.source.rawValue, $1.job.label) }
+        case .lastRun: items.sort { ($0.stats.lastRun ?? .distantPast) > ($1.stats.lastRun ?? .distantPast) }
+        case .runs:    items.sort { $0.stats.totalRuns > $1.stats.totalRuns }
+        case .cost:    items.sort { $0.stats.totalCostUSD > $1.stats.totalCostUSD }
         }
         return items
     }
