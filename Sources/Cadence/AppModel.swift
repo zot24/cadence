@@ -114,7 +114,9 @@ final class AppModel {
         if !searchText.isEmpty {
             let q = searchText.lowercased()
             items = items.filter {
-                $0.job.label.lowercased().contains(q) || $0.job.command.lowercased().contains(q)
+                $0.job.label.lowercased().contains(q)
+                    || $0.job.command.lowercased().contains(q)
+                    || ($0.job.origin.tool?.lowercased().contains(q) ?? false)
             }
         }
         switch sortKey {
