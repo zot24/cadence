@@ -66,6 +66,7 @@ struct MenuBarView: View {
         var parts = ["\(model.records.count) jobs"]
         if model.failingCount > 0 { parts.append("\(model.failingCount) failing") }
         parts.append("\(model.totalRunCount) runs")
+        if model.totalSpendUSD > 0 { parts.append(Fmt.cost(model.totalSpendUSD)) }
         return parts.joined(separator: " · ")
     }
 
