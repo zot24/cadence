@@ -108,6 +108,14 @@ public final class JobRepository: @unchecked Sendable {
         store.recentActivity(limit: limit)
     }
 
+    /// Wipe all run history (DB rows + captured log files).
+    public func clearRunHistory() {
+        store.clearAllRuns()
+        let fm = FileManager.default
+        try? fm.removeItem(at: CadencePaths.logsDirectory)
+        try? fm.createDirectory(at: CadencePaths.logsDirectory, withIntermediateDirectories: true)
+    }
+
     /// Render the audit timeline as CSV for export/governance.
     public func activityCSV(limit: Int = 5000) -> String {
         let iso = ISO8601DateFormatter()

@@ -264,6 +264,10 @@ final class AppModel {
     func recentActivity(limit: Int = 500) -> [ActivityEntry] {
         repository?.recentActivity(limit: limit) ?? []
     }
+    func clearRunHistory() {
+        repository?.clearRunHistory()
+        refresh()
+    }
     func activityCSV() -> String { repository?.activityCSV() ?? "" }
 
     func selectJob(_ id: String) { selectedJobID = id }

@@ -313,6 +313,11 @@ public final class RunStore: @unchecked Sendable {
         setSetting(key, value: String(value))
     }
 
+    /// Delete all recorded runs (history reset).
+    public func clearAllRuns() {
+        queue.sync { _ = sqlite3_exec(db, "DELETE FROM runs;", nil, nil, nil) }
+    }
+
     // MARK: - Audit timeline (cross-job activity)
 
     /// Every recorded run across all jobs, newest first, joined with job identity.

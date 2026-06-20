@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var roots: [URL] = JobRepository.flueRoots()
     @State private var notifyOnFail = true
     @State private var timeoutMinutes = 0
+    @State private var confirmingClear = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -90,6 +91,10 @@ struct SettingsView: View {
                 .font(.caption)
                 Text("Run history (cadence.db), the recorder shim, and per-run logs live here.")
                     .font(.caption2).foregroundStyle(.secondary)
+                Button(role: .destructive) { confirmingClear = true } label: {
+                    Label("Clear Run History…", systemImage: "trash")
+                }
+                .font(.caption)
             }
             .padding()
 
@@ -108,6 +113,12 @@ struct SettingsView: View {
             .padding()
         }
         .frame(width: 520, height: 600)
+        .confirmationDialog("Clear all run history?", isPresented: $confirmingClear, titleVisibility: .visible) {
+            Button("Clear History", role: .destructive) { model.clearRunHistory() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Deletes recorded runs and captured logs. Your jobs and schedules are not affected.")
+        }
         .onAppear {
             notifyOnFail = model.getNotifyOnFail()
             timeoutMinutes = model.getTimeoutMinutes()
