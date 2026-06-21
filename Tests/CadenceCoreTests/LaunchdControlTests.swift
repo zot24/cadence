@@ -87,6 +87,11 @@ final class LaunchdControlTests: XCTestCase {
         XCTAssertTrue(cmd.contains("rm -f '/Library/LaunchDaemons/com.x.plist'"))
     }
 
+    func testElevatedKickstartCommand() {
+        let cmd = LaunchdControl.elevatedKickstartCommand(label: "com.x", domain: .systemDaemon)
+        XCTAssertEqual(cmd, "/bin/launchctl kickstart -k system/com.x")
+    }
+
     func testAppleScriptEscaping() {
         XCTAssertEqual(PrivilegedExec.escapeForAppleScript(#"a "b" \c"#), #"a \"b\" \\c"#)
     }

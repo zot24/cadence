@@ -171,6 +171,17 @@ public final class JobRepository: @unchecked Sendable {
         ])
     }
 
+    /// Run a privileged launchd job now via launchctl as root (executed by
+    /// launchd in its real context — not wrapped by the recorder, so this manual
+    /// run is not recorded). Non-privileged jobs fall back to the recorded path.
+    public func runNowElevated(_ job: Job) throws {
+        if let domain = job.launchdDomain, domain != .userAgent {
+            try LaunchdControl.kickstartElevated(label: job.label, domain: domain)
+        } else {
+            runNow(job)
+        }
+    }
+
     public func setEnabled(_ job: Job, enabled: Bool, elevated: Bool = false) throws {
         // launchd-backed jobs (incl. Flue scheduled via launchd) carry a plist.
         if let domain = job.launchdDomain, let plist = job.plistPath {

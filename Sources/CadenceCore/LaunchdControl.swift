@@ -140,4 +140,16 @@ public enum LaunchdControl {
         try PrivilegedExec.runAsRoot(elevatedRemoveCommand(
             label: label, domain: domain, plistPath: plistPath))
     }
+
+    /// Root shell command to run a job immediately (launchd executes it in its
+    /// real context; `-k` restarts it if already running).
+    static func elevatedKickstartCommand(label: String, domain: LaunchdDomain) -> String {
+        "/bin/launchctl kickstart -k \(domainTarget(for: domain))/\(label)"
+    }
+
+    /// Run a job now in a privileged domain via the admin auth prompt. The run is
+    /// executed by launchd (not the cadence-rec shim), so it is not recorded.
+    public static func kickstartElevated(label: String, domain: LaunchdDomain) throws {
+        try PrivilegedExec.runAsRoot(elevatedKickstartCommand(label: label, domain: domain))
+    }
 }

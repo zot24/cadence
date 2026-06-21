@@ -193,6 +193,11 @@ final class AppModel {
 
     func runNow(_ job: Job) {
         guard let repository else { return }
+        if needsElevation(job) {
+            // Privileged daemon/agent: kickstart via launchd as root (prompts).
+            perform { try $0.runNowElevated(job) }
+            return
+        }
         Task.detached(priority: .userInitiated) {
             repository.runNow(job)
             await MainActor.run { self.refresh() }
