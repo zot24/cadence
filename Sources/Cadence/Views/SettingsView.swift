@@ -25,13 +25,14 @@ struct SettingsView: View {
             .padding()
             Divider()
 
+            ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Flue Project Folders")
                     .font(.subheadline.weight(.semibold))
                 Text("Folders Cadence scans (one level deep) for Flue projects to schedule.")
                     .font(.caption).foregroundStyle(.secondary)
 
-                List {
+                VStack(alignment: .leading, spacing: 4) {
                     ForEach(roots, id: \.self) { url in
                         HStack {
                             Image(systemName: "folder")
@@ -49,8 +50,9 @@ struct SettingsView: View {
                         Text("No folders configured.").font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                .frame(height: 180)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+                .background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 6))
 
                 Button { addFolder() } label: {
                     Label("Add Folder…", systemImage: "plus")
@@ -144,6 +146,7 @@ struct SettingsView: View {
                 .font(.caption)
             }
             .padding()
+            }   // ScrollView
 
             Divider()
             HStack {
@@ -164,7 +167,7 @@ struct SettingsView: View {
             }
             .padding()
         }
-        .frame(width: 520, height: 840)
+        .frame(width: 520, height: 620)
         .confirmationDialog("Clear all run history?", isPresented: $confirmingClear, titleVisibility: .visible) {
             Button("Clear History", role: .destructive) { model.clearRunHistory() }
             Button("Cancel", role: .cancel) {}
