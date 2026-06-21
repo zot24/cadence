@@ -17,6 +17,7 @@ struct JobDetailView: View {
     @State private var aiExplanation: String?
     @State private var aiTriageLoading = false
     @State private var aiTriageError: String?
+    @State private var processDetails: [ProcessDetail] = []
 
     enum LogStream: String, CaseIterable { case stdout = "Output", stderr = "Errors" }
 
@@ -38,6 +39,7 @@ struct JobDetailView: View {
                 if job.risk.isRisky { safetySection }
                 commandSection
                 detailsSection
+                processDetailsSection
                 runHistorySection
                 if let triage { triageSection(triage) }
                 if selectedRunID != nil { logSection }
@@ -70,6 +72,27 @@ struct JobDetailView: View {
         reschedule = computeReschedule()
         triage = computeTriage()
         aiExplanation = nil; aiTriageError = nil
+        processDetails = job.launchdDomain != nil ? model.processDetails(job) : []
+    }
+
+    @ViewBuilder
+    private var processDetailsSection: some View {
+        if !processDetails.isEmpty {
+            section("Process") {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(processDetails) { d in
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(d.label).foregroundStyle(.secondary)
+                                .frame(width: 92, alignment: .leading)
+                            Text(d.value).textSelection(.enabled)
+                                .font(.system(.callout, design: .monospaced))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .font(.callout)
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Header

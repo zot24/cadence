@@ -200,6 +200,12 @@ final class AppModel {
         repository?.logText(at: path) ?? ""
     }
 
+    /// Live launchd process detail (state/PID/last-exit/runs + CPU/mem) for a job.
+    func processDetails(_ job: Job) -> [ProcessDetail] {
+        guard let domain = job.launchdDomain else { return [] }
+        return LaunchdInspect.inspect(label: job.label, domain: domain)
+    }
+
     // MARK: - Actions
 
     private func perform(_ action: @escaping (JobRepository) throws -> Void) {

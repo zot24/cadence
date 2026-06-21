@@ -6,6 +6,11 @@ All notable changes to Cadence are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-06-21
+### Added
+- "Process" section in the job detail view: live `launchctl print` detail (state, PID, last exit,
+  run count, program) plus CPU / memory / uptime from `ps` for the running process.
+
 ## [0.1.8] - 2026-06-21
 ### Added
 - Tooling: this CHANGELOG and a GitHub Actions CI pipeline (build, test, SwiftLint).
@@ -59,7 +64,8 @@ All notable changes to Cadence are documented here. The format is based on
 - Model-backed **"Explain with AI"** failure triage (key stored in the Keychain).
 - Homebrew tap distribution (`zot24/homebrew-tap`).
 
-[Unreleased]: https://github.com/zot24/cadence/compare/v0.1.8...HEAD
+[Unreleased]: https://github.com/zot24/cadence/compare/v0.1.9...HEAD
+[0.1.9]: https://github.com/zot24/cadence/releases/tag/v0.1.9
 [0.1.8]: https://github.com/zot24/cadence/releases/tag/v0.1.8
 [0.1.7]: https://github.com/zot24/cadence/releases/tag/v0.1.7
 [0.1.6]: https://github.com/zot24/cadence/releases/tag/v0.1.6
