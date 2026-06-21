@@ -117,12 +117,12 @@ swift test
 ### Homebrew (tap)
 
 ```bash
-brew install --cask zot24/cadence/cadence
+brew install --cask zot24/tap/cadence
 ```
 
-This taps [`zot24/homebrew-cadence`](https://github.com/zot24/homebrew-cadence) and installs the
-latest release `.dmg`. The app is **ad-hoc signed** (not yet notarized), so on first launch use
-right-click → **Open** (or `xattr -dr com.apple.quarantine /Applications/Cadence.app`).
+This installs the latest release `.dmg` from [`zot24/homebrew-tap`](https://github.com/zot24/homebrew-tap).
+The app is **ad-hoc signed** (not yet notarized), so on first launch use right-click → **Open**
+(or `xattr -dr com.apple.quarantine /Applications/Cadence.app`).
 
 ## Distribution
 
