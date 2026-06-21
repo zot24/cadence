@@ -15,15 +15,15 @@ fills the gap.
 No existing macOS tool combines all of: manage native **cron** *and* **launchd**, capture **logs**,
 track a per-job **run count**, run from the **menu bar**, *and* govern model-agent **cost/risk**.
 
-| Tool | cron | launchd | Logs | Run count | Menu-bar | Agent cost/risk |
-|------|:----:|:-------:|:----:|:---------:|:--------:|:---------------:|
-| **Cadence** | ✅ | ✅ ¹ | ✅ | ✅ | ✅ | ✅ |
-| LaunchControl (~$17) | — | ✅ (best editor) | ✅ | — | — | — |
-| Lingon 10 / Pro (free/$24) | — | ✅ | Pro only | — | — | — |
-| Orchard Ops (free/$15) | read-only | ✅ | ✅ (history) | — | ? | — |
-| CronniX / Macron | ✅ ² | — | — | — | — | — |
-| crontab-ui / Cronmaster | ✅ (web) | — | ✅ | — | — (web) | — |
-| Cronitor / Healthchecks | — ³ | — ³ | partial | ✅ | — | — |
+| Tool | cron | launchd | Logs | Run count | Menu-bar | Agent cost/risk | Sandbox |
+|------|:----:|:-------:|:----:|:---------:|:--------:|:---------------:|:-------:|
+| **Cadence** | ✅ | ✅ ¹ | ✅ | ✅ | ✅ | ✅ | ✅ Seatbelt |
+| LaunchControl (~$17) | — | ✅ (best editor) | ✅ | — | — | — | — |
+| Lingon 10 / Pro (free/$24) | — | ✅ | Pro only | — | — | — | — |
+| Orchard Ops (free/$15) | read-only | ✅ | ✅ (history) | — | ? | — | — |
+| CronniX / Macron | ✅ ² | — | — | — | — | — | — |
+| crontab-ui / Cronmaster | ✅ (web) | — | ✅ | — | — (web) | — | — |
+| Cronitor / Healthchecks | — ³ | — ³ | partial | ✅ | — | — | — |
 
 ¹ User LaunchAgents are tracked directly; system daemons / global agents via an opt-in admin prompt.
 ² Unmaintained / 32-bit (CronniX is dead; Macron stale since 2022).
@@ -32,6 +32,29 @@ track a per-job **run count**, run from the **menu bar**, *and* govern model-age
 **Why the run count is rare:** cron and launchd only persist a job's *last* exit status, never a
 cumulative count — so tracking it structurally requires wrapping each job. That's exactly what
 Cadence's `cadence-rec` shim does.
+
+### Sandboxing approaches for local agents
+
+Cadence runs each scheduled agent under macOS **Seatbelt** (`sandbox-exec`). Where that sits among the
+options for isolating a *locally-run* AI agent:
+
+| Approach | Isolation | Local | macOS | Per-host network | Deps | Cadence |
+|----------|-----------|:-----:|:-----:|:----------------:|:----:|---------|
+| **Seatbelt / `sandbox-exec`** | kernel syscall profile | ✅ | built-in | ❌ all-or-nothing | none | **Tier 1 (shipped)** |
+| App Sandbox | entitlement | ✅ | needs codesign + GUI | ❌ | — | ✗ not for headless cron |
+| Apple `container` | one-VM-per-container | ✅ | macOS 26 + Apple silicon | ✅ | tool | Tier 3 (heavy) |
+| Docker / OrbStack / colima | Linux VM | ✅ | via VM | ✅ | tool | Tier 3 (heavy) |
+| Deno permissions | runtime allow-list | ✅ | ✅ | ✅ `--allow-net=host` | — | n/a (Flue is Node) |
+| Node `--permission` | runtime | ✅ | ✅ | ❌ no net permission | — | weak |
+| E2B / Vercel / Daytona / Modal / Cloudflare | microVM / V8 isolate | ❌ cloud | — | ✅ | service | ✗ sends data off-machine |
+
+Cadence picks Seatbelt because it's **zero-dependency** (ships with macOS), needs no Apple silicon /
+Node 24 / cloud account, and matches the app's local-first, no-deps philosophy. It confines each
+agent's writes to its project + `~/Cadence` + caches, denies reads of credential stores, blocks
+privilege-escalation exec, and strips the ssh-agent socket. Its one gap — Seatbelt can't restrict
+network to a single host — is roadmapped via a localhost egress proxy (Tier 2). The cloud sandboxes
+(E2B/Vercel/Daytona/Modal/Cloudflare) are deliberately *not* used: they'd send your data off-machine,
+defeating the point of running locally.
 
 ## Features
 
