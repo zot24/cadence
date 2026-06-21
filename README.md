@@ -65,6 +65,16 @@ Cadence's `cadence-rec` shim does.
   `EnvironmentVariables`; for **Flue agent** jobs it edits the project's `.env` (the idiomatic way
   Flue loads keys), preserving comments and untouched keys; for plain **cron** jobs it edits inline
   `KEY=val` prefixes — so every job type can get its API keys in-app.
+- **Sandboxed agents (opt-in, default on for new agent jobs).** A scheduled agent can be confined
+  with macOS **Seatbelt** (`sandbox-exec`): **writes** are restricted to its project, `~/Cadence`, and
+  node caches; **reads** of credential stores (`~/.ssh`, `~/.aws`, Keychains, browser cookies, AI-tool
+  tokens) are denied; privilege-escalation / GUI-scripting tools (`osascript`, `sudo`, `launchctl`,
+  `crontab`) can't be exec'd; and the **ssh-agent socket is stripped**. Zero dependencies —
+  `sandbox-exec` ships with macOS — and `cadence-rec` stays *outside* the sandbox so runs are still
+  recorded. The profile is generated per-agent and verified against the kernel (build-time tests run
+  real `sandbox-exec`). Honest limits: reads are broad-with-a-credential-denylist (default-deny reads
+  abort dyld), and Seatbelt can't restrict network to a single host — full egress control is roadmapped
+  via a localhost proxy. Directly hardens the "exfiltration risk" the app already flags.
 - **Privileged actions (opt-in).** System daemons and global agents (in `/Library/Launch*`) need
   root, so by default Cadence declines to touch them with a clear message. Turn on **Privileged
   Actions** in Settings and enable/disable/delete runs as root via the native macOS admin prompt

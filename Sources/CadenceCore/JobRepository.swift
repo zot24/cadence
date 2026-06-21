@@ -346,7 +346,8 @@ public final class JobRepository: @unchecked Sendable {
     @discardableResult
     public func createAgentJob(project: URL, name: String, model: String,
                                instructions: String, schedule: String,
-                               scaffoldWorkspace: Bool) throws -> String {
+                               scaffoldWorkspace: Bool,
+                               sandbox: Bool = false, sandboxAllowNetwork: Bool = true) throws -> String {
         if scaffoldWorkspace {
             // Seed .env with the key the chosen model's provider actually needs
             // (local/custom providers need none).
@@ -357,6 +358,25 @@ public final class JobRepository: @unchecked Sendable {
         let slug = FlueScaffold.sanitize(name: name)
         let agent = FlueAgent(name: slug, isWorkflow: false,
                               projectPath: project.path, projectName: project.lastPathComponent)
-        return try scheduleFlueAgent(agent, schedule: schedule)
+        var command = FlueSource.command(for: agent)
+        if sandbox {
+            // Confine the agent at the kernel level (Seatbelt). cadence-rec stays
+            // OUTSIDE the sandbox (it's the wrapper) so it can record freely.
+            let profilePath = try installSandboxProfile(projectPath: project.path,
+                                                        allowNetwork: sandboxAllowNetwork, slug: slug)
+            command = SandboxProfile.wrap(command: command, profilePath: profilePath)
+        }
+        return try scheduleTrackedCommand(command: command, label: slug, schedule: schedule)
+    }
+
+    /// Write a per-agent Seatbelt profile into the support dir; return its path.
+    private func installSandboxProfile(projectPath: String, allowNetwork: Bool, slug: String) throws -> String {
+        let dir = CadencePaths.supportDirectory.appendingPathComponent("sandbox", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let url = dir.appendingPathComponent("\(slug).sb")
+        let sbpl = SandboxProfile.sbpl(projectPath: projectPath, home: NSHomeDirectory(),
+                                       allowNetwork: allowNetwork)
+        try sbpl.write(to: url, atomically: true, encoding: .utf8)
+        return url.path
     }
 }

@@ -263,11 +263,13 @@ final class AppModel {
     }
 
     func createAgentJob(project: URL, name: String, model: String, instructions: String,
-                        schedule: String, scaffoldWorkspace: Bool) {
+                        schedule: String, scaffoldWorkspace: Bool,
+                        sandbox: Bool = false, sandboxAllowNetwork: Bool = true) {
         perform {
             _ = try $0.createAgentJob(project: project, name: name, model: model,
                                       instructions: instructions, schedule: schedule,
-                                      scaffoldWorkspace: scaffoldWorkspace)
+                                      scaffoldWorkspace: scaffoldWorkspace,
+                                      sandbox: sandbox, sandboxAllowNetwork: sandboxAllowNetwork)
         }
     }
 

@@ -17,6 +17,8 @@ struct NewAgentJobView: View {
     @State private var bareModel = UserDefaults.standard.string(forKey: NewAgentJobView.lastModelKey) ?? "claude-sonnet-4-6"
     @State private var instructions = ""
     @State private var cronExpr = "0 9 * * *"
+    @State private var sandbox = true
+    @State private var sandboxAllowNetwork = true
 
     /// The "provider/model" specifier Flue's createAgent expects.
     private var modelSpecifier: String {
@@ -132,6 +134,18 @@ struct NewAgentJobView: View {
                         }
                     }
 
+                    field("Sandbox") {
+                        Toggle("Run sandboxed (confine filesystem)", isOn: $sandbox)
+                        if sandbox {
+                            Toggle("Allow network (needed to reach the model API)", isOn: $sandboxAllowNetwork)
+                            Text("Confines the agent to its project, ~/Cadence, and caches via macOS Seatbelt; blocks reading ~/.ssh, ~/.aws, and other credential stores. Seatbelt can't restrict network to a single host.")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        } else {
+                            Text("The agent runs with your full user permissions.")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
+
                     if needsSetup, let url = targetURL {
                         setupNotice(url)
                     }
@@ -149,7 +163,8 @@ struct NewAgentJobView: View {
                         UserDefaults.standard.set(bareModel, forKey: NewAgentJobView.lastModelKey)
                         model.createAgentJob(project: url, name: name, model: modelSpecifier,
                                              instructions: instructions, schedule: cronExpr,
-                                             scaffoldWorkspace: needsSetup)
+                                             scaffoldWorkspace: needsSetup,
+                                             sandbox: sandbox, sandboxAllowNetwork: sandboxAllowNetwork)
                     }
                     dismiss()
                 }
