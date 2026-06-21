@@ -97,9 +97,47 @@ public enum LaunchdControl {
             let kind = domain == .systemDaemon ? "a system daemon" : "a system-managed agent"
             return .needsPrivileges(
                 "“\(label)” is \(kind). \(operation.verb.capitalized) it requires administrator "
-                + "privileges, which Cadence won’t request on your behalf. To change it yourself, "
-                + "run the matching launchctl command with sudo in Terminal.")
+                + "privileges. Turn on “Privileged Actions” in Settings to do it from Cadence "
+                + "(you'll be asked for your admin password), or run the matching launchctl command "
+                + "with sudo in Terminal.")
         }
         return .failed(raw.isEmpty ? "exit \(exitCode)" : raw)
+    }
+
+    // MARK: - Privileged (admin-elevated) operations
+
+    private static func shellQuote(_ s: String) -> String {
+        "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
+    /// Root shell command to enable/disable a job in any domain.
+    static func elevatedSetEnabledCommand(label: String, domain: LaunchdDomain,
+                                          plistPath: String, enabled: Bool) -> String {
+        let target = domainTarget(for: domain)
+        if enabled {
+            return "/bin/launchctl enable \(target)/\(label) && "
+                 + "/bin/launchctl bootstrap \(target) \(shellQuote(plistPath))"
+        }
+        return "/bin/launchctl bootout \(target)/\(label); "
+             + "/bin/launchctl disable \(target)/\(label)"
+    }
+
+    /// Root shell command to remove a job: boot it out, then delete its plist.
+    static func elevatedRemoveCommand(label: String, domain: LaunchdDomain, plistPath: String) -> String {
+        "/bin/launchctl bootout \(domainTarget(for: domain))/\(label); "
+            + "/bin/rm -f \(shellQuote(plistPath))"
+    }
+
+    /// Enable/disable a job in a privileged domain via the admin auth prompt.
+    public static func setEnabledElevated(label: String, domain: LaunchdDomain,
+                                          plistPath: String, enabled: Bool) throws {
+        try PrivilegedExec.runAsRoot(elevatedSetEnabledCommand(
+            label: label, domain: domain, plistPath: plistPath, enabled: enabled))
+    }
+
+    /// Remove a job in a privileged domain via the admin auth prompt.
+    public static func removeElevated(label: String, domain: LaunchdDomain, plistPath: String) throws {
+        try PrivilegedExec.runAsRoot(elevatedRemoveCommand(
+            label: label, domain: domain, plistPath: plistPath))
     }
 }

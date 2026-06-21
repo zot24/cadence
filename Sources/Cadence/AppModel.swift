@@ -199,8 +199,20 @@ final class AppModel {
         }
     }
 
+    private static let allowPrivilegedKey = "com.cadence.allowPrivileged"
+    /// Opt-in: allow managing system/global launchd jobs via a native admin prompt.
+    var allowPrivilegedActions: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.allowPrivilegedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: Self.allowPrivilegedKey) }
+    }
+    /// True when a job needs root and the user has opted into elevation.
+    private func needsElevation(_ job: Job) -> Bool {
+        allowPrivilegedActions && (job.launchdDomain.map { $0 != .userAgent } ?? false)
+    }
+
     func toggleEnabled(_ job: Job) {
-        perform { try $0.setEnabled(job, enabled: !job.enabled) }
+        let elevate = needsElevation(job)
+        perform { try $0.setEnabled(job, enabled: !job.enabled, elevated: elevate) }
     }
 
     func toggleAdopted(_ job: Job) {
@@ -225,7 +237,8 @@ final class AppModel {
 
     func delete(_ job: Job) {
         if selectedJobID == job.id { selectedJobID = nil }
-        perform { try $0.delete(job) }
+        let elevate = needsElevation(job)
+        perform { try $0.delete(job, elevated: elevate) }
     }
 
     func addCronJob(schedule: String, command: String, label: String?, adopt: Bool) {

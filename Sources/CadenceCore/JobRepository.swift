@@ -171,29 +171,34 @@ public final class JobRepository: @unchecked Sendable {
         ])
     }
 
-    public func setEnabled(_ job: Job, enabled: Bool) throws {
+    public func setEnabled(_ job: Job, enabled: Bool, elevated: Bool = false) throws {
         // launchd-backed jobs (incl. Flue scheduled via launchd) carry a plist.
         if let domain = job.launchdDomain, let plist = job.plistPath {
-            try LaunchdControl.setEnabled(label: job.label, domain: domain, plistPath: plist, enabled: enabled)
+            if elevated && domain != .userAgent {
+                try LaunchdControl.setEnabledElevated(label: job.label, domain: domain, plistPath: plist, enabled: enabled)
+            } else {
+                try LaunchdControl.setEnabled(label: job.label, domain: domain, plistPath: plist, enabled: enabled)
+            }
         } else {
             try CronWriter.setEnabled(id: job.id, enabled: enabled)
         }
     }
 
-    public func delete(_ job: Job) throws {
+    public func delete(_ job: Job, elevated: Bool = false) throws {
         switch job.source {
         case .cron:
             try CronWriter.removeJob(id: job.id)
         case .flue where job.cronLine != nil:
             try CronWriter.removeJob(id: job.id)
         case .launchd, .flue:
-            // Removing a launchd job: bootout + delete the plist (user agents only).
-            if let domain = job.launchdDomain, domain == .userAgent,
-               let plist = job.plistPath {
+            // Removing a launchd job: bootout + delete the plist.
+            if let domain = job.launchdDomain, domain == .userAgent, let plist = job.plistPath {
                 try? LaunchdControl.setEnabled(label: job.label, domain: domain, plistPath: plist, enabled: false)
                 try FileManager.default.removeItem(atPath: plist)
+            } else if let domain = job.launchdDomain, let plist = job.plistPath, elevated {
+                try LaunchdControl.removeElevated(label: job.label, domain: domain, plistPath: plist)
             } else {
-                throw CronWriter.WriteError.installFailed("Deleting global/system launchd jobs requires removing \(job.plistPath ?? "the plist") with administrator privileges.")
+                throw CronWriter.WriteError.installFailed("Deleting global/system launchd jobs requires administrator privileges. Turn on “Privileged Actions” in Settings to do it from Cadence.")
             }
         }
     }

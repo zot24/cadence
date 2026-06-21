@@ -10,6 +10,29 @@ Built because nothing existing covers all of it at once: the maintained tools ma
 how many times each job has run** — because neither cron nor launchd persists that. Cadence
 fills the gap.
 
+## How it compares
+
+No existing macOS tool combines all of: manage native **cron** *and* **launchd**, capture **logs**,
+track a per-job **run count**, run from the **menu bar**, *and* govern model-agent **cost/risk**.
+
+| Tool | cron | launchd | Logs | Run count | Menu-bar | Agent cost/risk |
+|------|:----:|:-------:|:----:|:---------:|:--------:|:---------------:|
+| **Cadence** | ✅ | ✅ ¹ | ✅ | ✅ | ✅ | ✅ |
+| LaunchControl (~$17) | — | ✅ (best editor) | ✅ | — | — | — |
+| Lingon 10 / Pro (free/$24) | — | ✅ | Pro only | — | — | — |
+| Orchard Ops (free/$15) | read-only | ✅ | ✅ (history) | — | ? | — |
+| CronniX / Macron | ✅ ² | — | — | — | — | — |
+| crontab-ui / Cronmaster | ✅ (web) | — | ✅ | — | — (web) | — |
+| Cronitor / Healthchecks | — ³ | — ³ | partial | ✅ | — | — |
+
+¹ User LaunchAgents are tracked directly; system daemons / global agents via an opt-in admin prompt.
+² Unmaintained / 32-bit (CronniX is dead; Macron stale since 2022).
+³ Hosted monitoring or their own scheduler — not managers of the OS's native cron/launchd.
+
+**Why the run count is rare:** cron and launchd only persist a job's *last* exit status, never a
+cumulative count — so tracking it structurally requires wrapping each job. That's exactly what
+Cadence's `cadence-rec` shim does.
+
 ## Features
 
 - **Unified view** of cron + launchd + Flue jobs with live status dots (running / idle /
@@ -42,6 +65,11 @@ fills the gap.
   `EnvironmentVariables`; for **Flue agent** jobs it edits the project's `.env` (the idiomatic way
   Flue loads keys), preserving comments and untouched keys; for plain **cron** jobs it edits inline
   `KEY=val` prefixes — so every job type can get its API keys in-app.
+- **Privileged actions (opt-in).** System daemons and global agents (in `/Library/Launch*`) need
+  root, so by default Cadence declines to touch them with a clear message. Turn on **Privileged
+  Actions** in Settings and enable/disable/delete runs as root via the native macOS admin prompt
+  (Touch ID / password) — no Developer ID needed. Apple's SIP-protected daemons still can't be
+  changed even as root.
 - **Flue integration:** discover Flue projects in your code folders and schedule any agent or
   workflow as a tracked job — Cadence records runs while Flue keeps its own durable logs.
 - **Agent readiness pre-flight.** For a scheduled Flue agent, Cadence checks *before* the schedule

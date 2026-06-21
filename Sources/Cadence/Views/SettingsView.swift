@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var triageModel = ""
     @State private var triageKey = ""
     @State private var triageBaseURL = ""
+    @State private var allowPrivileged = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -115,6 +116,18 @@ struct SettingsView: View {
 
                 Divider().padding(.vertical, 4)
 
+                Text("Privileged Actions")
+                    .font(.subheadline.weight(.semibold))
+                Toggle(isOn: $allowPrivileged) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Manage system & global launchd jobs (asks for admin password)")
+                        Text("When on, enabling/disabling or deleting a system daemon or global agent runs the launchctl change as root via a native macOS prompt. Apple's SIP-protected daemons still can't be changed even as root.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+
+                Divider().padding(.vertical, 4)
+
                 Text("Storage")
                     .font(.subheadline.weight(.semibold))
                 Button {
@@ -144,13 +157,14 @@ struct SettingsView: View {
                     model.triageModelID = triageModel
                     model.triageBaseURL = triageBaseURL
                     model.triageAPIKey = triageKey          // …so the key stores under it
+                    model.allowPrivilegedActions = allowPrivileged
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
             }
             .padding()
         }
-        .frame(width: 520, height: 760)
+        .frame(width: 520, height: 840)
         .confirmationDialog("Clear all run history?", isPresented: $confirmingClear, titleVisibility: .visible) {
             Button("Clear History", role: .destructive) { model.clearRunHistory() }
             Button("Cancel", role: .cancel) {}
@@ -164,6 +178,7 @@ struct SettingsView: View {
             triageModel = model.triageModelID
             triageBaseURL = model.triageBaseURL
             triageKey = model.triageAPIKey
+            allowPrivileged = model.allowPrivilegedActions
         }
     }
 

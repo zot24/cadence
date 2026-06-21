@@ -61,4 +61,33 @@ final class LaunchdControlTests: XCTestCase {
         let err = LaunchdControl.ControlError.needsPrivileges("X requires administrator privileges.")
         XCTAssertEqual(err.description, "X requires administrator privileges.")
     }
+
+    // MARK: - Elevated (privileged) command builders
+
+    func testElevatedDisableCommand() {
+        let cmd = LaunchdControl.elevatedSetEnabledCommand(
+            label: "com.adobe.ARMDC.Communicator", domain: .systemDaemon,
+            plistPath: "/Library/LaunchDaemons/com.adobe.ARMDC.Communicator.plist", enabled: false)
+        XCTAssertTrue(cmd.contains("launchctl bootout system/com.adobe.ARMDC.Communicator"))
+        XCTAssertTrue(cmd.contains("launchctl disable system/com.adobe.ARMDC.Communicator"))
+    }
+
+    func testElevatedEnableCommandQuotesPlist() {
+        let cmd = LaunchdControl.elevatedSetEnabledCommand(
+            label: "com.x", domain: .systemDaemon,
+            plistPath: "/Library/LaunchDaemons/com.x.plist", enabled: true)
+        XCTAssertTrue(cmd.contains("launchctl enable system/com.x"))
+        XCTAssertTrue(cmd.contains("launchctl bootstrap system '/Library/LaunchDaemons/com.x.plist'"))
+    }
+
+    func testElevatedRemoveCommand() {
+        let cmd = LaunchdControl.elevatedRemoveCommand(
+            label: "com.x", domain: .systemDaemon, plistPath: "/Library/LaunchDaemons/com.x.plist")
+        XCTAssertTrue(cmd.contains("launchctl bootout system/com.x"))
+        XCTAssertTrue(cmd.contains("rm -f '/Library/LaunchDaemons/com.x.plist'"))
+    }
+
+    func testAppleScriptEscaping() {
+        XCTAssertEqual(PrivilegedExec.escapeForAppleScript(#"a "b" \c"#), #"a \"b\" \\c"#)
+    }
 }
