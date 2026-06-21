@@ -110,16 +110,23 @@ public enum LaunchdControl {
         "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
-    /// Root shell command to enable/disable a job in any domain.
+    /// Root shell command to enable/disable a job in any domain. Also writes the
+    /// plist's `Disabled` key, because that's what Cadence reads to show state —
+    /// `launchctl disable` only updates launchd's override DB, so without this the
+    /// UI wouldn't reflect the change even when the daemon was actually stopped.
     static func elevatedSetEnabledCommand(label: String, domain: LaunchdDomain,
                                           plistPath: String, enabled: Bool) -> String {
         let target = domainTarget(for: domain)
+        let plist = shellQuote(plistPath)
         if enabled {
-            return "/bin/launchctl enable \(target)/\(label) && "
-                 + "/bin/launchctl bootstrap \(target) \(shellQuote(plistPath))"
+            return "(/usr/bin/plutil -replace Disabled -bool false \(plist) || /usr/bin/plutil -insert Disabled -bool false \(plist)); "
+                 + "/bin/launchctl enable \(target)/\(label); "
+                 + "/bin/launchctl bootstrap \(target) \(plist)"
         }
-        return "/bin/launchctl bootout \(target)/\(label); "
-             + "/bin/launchctl disable \(target)/\(label)"
+        // disable (prevents KeepAlive restart) → bootout (stop now) → mark plist.
+        return "/bin/launchctl disable \(target)/\(label); "
+             + "/bin/launchctl bootout \(target)/\(label); "
+             + "(/usr/bin/plutil -replace Disabled -bool true \(plist) || /usr/bin/plutil -insert Disabled -bool true \(plist))"
     }
 
     /// Root shell command to remove a job: boot it out, then delete its plist.

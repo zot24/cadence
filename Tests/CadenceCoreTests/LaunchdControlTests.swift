@@ -70,6 +70,11 @@ final class LaunchdControlTests: XCTestCase {
             plistPath: "/Library/LaunchDaemons/com.adobe.ARMDC.Communicator.plist", enabled: false)
         XCTAssertTrue(cmd.contains("launchctl bootout system/com.adobe.ARMDC.Communicator"))
         XCTAssertTrue(cmd.contains("launchctl disable system/com.adobe.ARMDC.Communicator"))
+        XCTAssertTrue(cmd.contains("plutil -replace Disabled -bool true"), "must persist Disabled in the plist (what Cadence reads)")
+        // disable must precede bootout so KeepAlive can't restart it mid-operation.
+        let disableIdx = cmd.range(of: "launchctl disable")!.lowerBound
+        let bootoutIdx = cmd.range(of: "launchctl bootout")!.lowerBound
+        XCTAssertTrue(disableIdx < bootoutIdx, "disable should run before bootout")
     }
 
     func testElevatedEnableCommandQuotesPlist() {
@@ -78,6 +83,7 @@ final class LaunchdControlTests: XCTestCase {
             plistPath: "/Library/LaunchDaemons/com.x.plist", enabled: true)
         XCTAssertTrue(cmd.contains("launchctl enable system/com.x"))
         XCTAssertTrue(cmd.contains("launchctl bootstrap system '/Library/LaunchDaemons/com.x.plist'"))
+        XCTAssertTrue(cmd.contains("plutil -replace Disabled -bool false"), "must clear Disabled in the plist")
     }
 
     func testElevatedRemoveCommand() {
