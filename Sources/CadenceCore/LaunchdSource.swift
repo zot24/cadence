@@ -42,9 +42,7 @@ public enum LaunchdSource {
         let disabled = (plist["Disabled"] as? Bool) ?? false
         let rt = runtime[label]
         var status: JobRuntimeStatus = .idle
-        if disabled { status = .disabled }
-        else if let rt, rt.pid != nil { status = .running }
-        else if let rt, let exit = rt.lastExitStatus, exit != 0 { status = .errored }
+        if disabled { status = .disabled } else if let rt, rt.pid != nil { status = .running } else if let rt, let exit = rt.lastExitStatus, exit != 0 { status = .errored }
 
         return Job(
             id: "launchd:" + label,
@@ -81,8 +79,7 @@ public enum LaunchdSource {
         var schedule = JobSchedule()
         schedule.runAtLoad = (plist["RunAtLoad"] as? Bool) ?? false
         // KeepAlive can be a Bool or a Dictionary.
-        if let ka = plist["KeepAlive"] as? Bool { schedule.keepAlive = ka }
-        else if plist["KeepAlive"] is [String: Any] { schedule.keepAlive = true }
+        if let ka = plist["KeepAlive"] as? Bool { schedule.keepAlive = ka } else if plist["KeepAlive"] is [String: Any] { schedule.keepAlive = true }
 
         if let interval = plist["StartInterval"] as? Int {
             schedule.startInterval = interval
@@ -126,9 +123,7 @@ public enum LaunchdSource {
         let weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
         var bits: [String] = []
         if let wd = c.weekday, (0...7).contains(wd) { bits.append(weekdayNames[wd % 7]) }
-        if let h = c.hour, let m = c.minute { bits.append(String(format: "%02d:%02d", h, m)) }
-        else if let h = c.hour { bits.append("hour \(h)") }
-        else if let m = c.minute { bits.append("minute \(m)") }
+        if let h = c.hour, let m = c.minute { bits.append(String(format: "%02d:%02d", h, m)) } else if let h = c.hour { bits.append("hour \(h)") } else if let m = c.minute { bits.append("minute \(m)") }
         if let d = c.day { bits.append("day \(d)") }
         return bits.isEmpty ? "Calendar interval" : bits.joined(separator: " ")
     }

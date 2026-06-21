@@ -16,7 +16,7 @@ struct NewLaunchdJobView: View {
     @State private var adopt = true
 
     enum Mode: String, CaseIterable, Identifiable { case interval = "Every", daily = "Daily", weekly = "Weekly"; var id: String { rawValue } }
-    enum Unit: String, CaseIterable, Identifiable { case minutes = "minutes", hours = "hours"; var id: String { rawValue } }
+    enum Unit: String, CaseIterable, Identifiable { case minutes, hours; var id: String { rawValue } }
 
     private let weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 

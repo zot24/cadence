@@ -488,8 +488,7 @@ struct JobDetailView: View {
         aiTriageLoading = true
         aiTriageError = nil
         Task {
-            do { aiExplanation = try await model.explainFailure(job: job, run: run) }
-            catch { aiTriageError = error.localizedDescription }
+            do { aiExplanation = try await model.explainFailure(job: job, run: run) } catch { aiTriageError = error.localizedDescription }
             aiTriageLoading = false
         }
     }

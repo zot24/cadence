@@ -70,7 +70,7 @@ public enum CronSource {
                 // A disabled job is a comment that still parses as a job line.
                 let uncommented = String(line.drop(while: { $0 == "#" })).trimmingCharacters(in: .whitespaces)
                 if let job = parseJobLine(uncommented, markerID: pendingID), !uncommented.isEmpty,
-                   (uncommented.first == "*" || uncommented.first == "@" || uncommented.first?.isNumber == true) {
+                   uncommented.first == "*" || uncommented.first == "@" || uncommented.first?.isNumber == true {
                     out.append((job, idx, true))
                     pendingID = nil
                 }

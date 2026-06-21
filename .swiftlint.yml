@@ -1,0 +1,21 @@
+# SwiftLint configuration for Cadence
+disabled_rules:
+  - line_length
+  - todo
+  - type_body_length
+  - file_length
+  - function_body_length
+  - function_parameter_count
+  - cyclomatic_complexity
+  - identifier_name
+  - large_tuple
+  - nesting
+  - trailing_comma
+  - for_where
+  - blanket_disable_command
+  - force_cast
+opt_in_rules:
+  - empty_count
+excluded:
+  - .build
+  - build

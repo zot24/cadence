@@ -179,8 +179,7 @@ public enum LaunchdWriter {
     /// Pure transform: set/clear EnvironmentVariables on a plist dict.
     public static func plistWithEnv(_ plist: [String: Any], env: [String: String]) -> [String: Any] {
         var p = plist
-        if env.isEmpty { p.removeValue(forKey: "EnvironmentVariables") }
-        else { p["EnvironmentVariables"] = env }
+        if env.isEmpty { p.removeValue(forKey: "EnvironmentVariables") } else { p["EnvironmentVariables"] = env }
         return p
     }
 

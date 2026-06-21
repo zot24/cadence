@@ -12,7 +12,7 @@ enum CadenceCLI {
             FileHandle.standardError.write(Data("cadence: could not open store\n".utf8)); exit(1)
         }
         let records = repo.loadAll()
-        json ? printJSON(records) : printText(records)
+        if json { printJSON(records) } else { printText(records) }
     }
 
     /// Health check for scripting/monitoring: prints a one-line summary and

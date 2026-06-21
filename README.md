@@ -1,5 +1,7 @@
 # Cadence
 
+[![CI](https://github.com/zot24/cadence/actions/workflows/ci.yml/badge.svg)](https://github.com/zot24/cadence/actions/workflows/ci.yml)
+
 A native macOS menu-bar app to **visualize, edit, monitor, and track** the scheduled
 jobs on your Mac — classic **cron**, **launchd** LaunchAgents/Daemons, and **Flue**
 agents/workflows — in one place, with per-job **run counts**, **logs**, **status**, and
