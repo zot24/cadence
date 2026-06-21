@@ -60,6 +60,19 @@ final class ProvenanceTests: XCTestCase {
         XCTAssertEqual(origin.category, .system)
     }
 
+    /// Reverse-DNS vendor label classifies even with no binary evidence in the
+    /// command — the ai.hermes.gateway-residencyos case the user hit.
+    func testHermesVendorLabelWithoutCommandEvidence() {
+        let j = Job(id: "launchd:ai.hermes.gateway-residencyos", source: .launchd,
+                    label: "ai.hermes.gateway-residencyos",
+                    command: "/Users/x/.local/bin/node /opt/residencyos/run.js",
+                    schedule: JobSchedule(), enabled: true, launchdDomain: .userAgent)
+        let o = JobProvenanceDetector.detect(j)
+        XCTAssertEqual(o.category, .aiAgent)
+        XCTAssertEqual(o.tool, "Hermes")
+        XCTAssertTrue(o.isAgentic)
+    }
+
     func testUser() {
         XCTAssertEqual(JobProvenance.classify(cron("/usr/local/bin/backup.sh")), .user)
         XCTAssertFalse(JobProvenanceDetector.detect(cron("/usr/local/bin/manage-agents.sh")).isAgentic,

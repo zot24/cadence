@@ -113,6 +113,7 @@ public enum JobProvenanceDetector {
     private static let labelVendors: [(prefix: String, tool: String, category: JobProvenance)] = [
         ("com.apple.", "Apple", .system),
         ("homebrew.mxcl.", "Homebrew", .packageManager),
+        ("ai.hermes.", "Hermes", .aiAgent),   // vendor namespace, not a loose keyword
         ("com.google.", "Google", .user),
         ("com.microsoft.", "Microsoft", .user),
         ("com.docker.", "Docker", .user),

@@ -5,8 +5,13 @@ All notable changes to Cadence are documented here. The format is based on
 `brew install --cask zot24/tap/cadence`.
 
 ## [Unreleased]
+
+## [0.1.8] - 2026-06-21
 ### Added
 - Tooling: this CHANGELOG and a GitHub Actions CI pipeline (build, test, SwiftLint).
+### Fixed
+- Classify `ai.hermes.*` jobs as AI agents via the reverse-DNS vendor label (e.g.
+  `ai.hermes.gateway-residencyos`), even when the command shows no `hermes` binary evidence.
 
 ## [0.1.7] - 2026-06-21
 ### Added
@@ -54,7 +59,8 @@ All notable changes to Cadence are documented here. The format is based on
 - Model-backed **"Explain with AI"** failure triage (key stored in the Keychain).
 - Homebrew tap distribution (`zot24/homebrew-tap`).
 
-[Unreleased]: https://github.com/zot24/cadence/compare/v0.1.7...HEAD
+[Unreleased]: https://github.com/zot24/cadence/compare/v0.1.8...HEAD
+[0.1.8]: https://github.com/zot24/cadence/releases/tag/v0.1.8
 [0.1.7]: https://github.com/zot24/cadence/releases/tag/v0.1.7
 [0.1.6]: https://github.com/zot24/cadence/releases/tag/v0.1.6
 [0.1.5]: https://github.com/zot24/cadence/releases/tag/v0.1.5
