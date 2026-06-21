@@ -42,6 +42,8 @@ struct MainWindowView: View {
                     Picker("Sort by", selection: $model.sortKey) {
                         ForEach(JobSort.allCases) { Text($0.rawValue).tag($0) }
                     }
+                    Divider()
+                    Toggle("Group by org", isOn: $model.groupByOrg)
                 } label: {
                     Label("Sort", systemImage: "arrow.up.arrow.down")
                 }

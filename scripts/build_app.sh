@@ -14,7 +14,7 @@ BIN=".build/$CONFIG"
 APP="build/Cadence.app"
 # Keep in sync with the Homebrew tap cask (zot24/homebrew-tap Casks/cadence.rb)
 # and the git release tag. Sets CFBundleShortVersionString (the macOS About panel).
-VERSION="0.1.6"
+VERSION="0.1.7"
 BUNDLE_ID="com.sotoisra.cadence"
 
 echo "▸ Assembling ${APP}…"

@@ -65,6 +65,10 @@ final class AppModel {
     var sortKey: JobSort = JobSort(rawValue: UserDefaults.standard.string(forKey: AppModel.sortKeyDefault) ?? "") ?? .name {
         didSet { UserDefaults.standard.set(sortKey.rawValue, forKey: Self.sortKeyDefault) }
     }
+    private static let groupByOrgKey = "com.cadence.groupByOrg"
+    var groupByOrg: Bool = (UserDefaults.standard.object(forKey: AppModel.groupByOrgKey) as? Bool) ?? true {
+        didSet { UserDefaults.standard.set(groupByOrg, forKey: Self.groupByOrgKey) }
+    }
 
     // Sheets
     var showingNewCron = false
@@ -130,6 +134,25 @@ final class AppModel {
         case .cost:    items.sort { $0.stats.totalCostUSD > $1.stats.totalCostUSD }
         }
         return items
+    }
+
+    /// `filtered` grouped by vendor org (from the reverse-DNS label), ordered
+    /// alphabetically with "Other" last. Records keep the active sort within groups.
+    var grouped: [(org: String, records: [JobRecord])] {
+        var map: [String: [JobRecord]] = [:]
+        var order: [String] = []
+        for r in filtered {
+            var org = JobOrg.organization(forLabel: r.job.label)
+            if org == JobOrg.other, let tool = r.job.origin.tool { org = tool }
+            if map[org] == nil { order.append(org) }
+            map[org, default: []].append(r)
+        }
+        let sorted = order.sorted { a, b in
+            if a == JobOrg.other { return false }
+            if b == JobOrg.other { return true }
+            return a.localizedCaseInsensitiveCompare(b) == .orderedAscending
+        }
+        return sorted.map { ($0, map[$0]!) }
     }
 
     var selectedRecord: JobRecord? {

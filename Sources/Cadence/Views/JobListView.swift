@@ -26,10 +26,14 @@ struct JobListView: View {
                 }
             } else {
                 List(selection: $model.selectedJobID) {
-                    ForEach(model.filtered) { record in
-                        JobRow(record: record)
-                            .tag(record.id)
-                            .contextMenu { rowMenu(record.job) }
+                    if model.groupByOrg {
+                        ForEach(model.grouped, id: \.org) { group in
+                            Section(group.org) {
+                                ForEach(group.records) { row($0) }
+                            }
+                        }
+                    } else {
+                        ForEach(model.filtered) { row($0) }
                     }
                 }
                 .listStyle(.inset)
@@ -41,6 +45,13 @@ struct JobListView: View {
                 ProgressView().controlSize(.small).padding(6)
             }
         }
+    }
+
+    @ViewBuilder
+    private func row(_ record: JobRecord) -> some View {
+        JobRow(record: record)
+            .tag(record.id)
+            .contextMenu { rowMenu(record.job) }
     }
 
     @ViewBuilder
