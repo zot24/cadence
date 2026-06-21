@@ -102,6 +102,23 @@ swift run Cadence
 swift test
 ```
 
+## Distribution
+
+```bash
+scripts/make_dmg.sh release      # → build/Cadence.dmg (drag-to-Applications)
+```
+
+The app is **ad-hoc signed**, so it runs on this machine and on others via
+right-click → **Open** (first launch only). For frictionless distribution to
+other Macs:
+
+1. Set `DEV_ID="Developer ID Application: Your Name (TEAMID)"` and re-run
+   `scripts/make_dmg.sh` — it re-signs the app with that identity.
+2. Notarize the `.dmg`: `xcrun notarytool submit build/Cadence.dmg --apple-id … --team-id … --password …`, then `xcrun stapler staple build/Cadence.dmg`.
+
+Both steps require an Apple Developer account (no identity is configured on this
+machine, so the current build is ad-hoc only).
+
 ## Architecture
 
 A SwiftPM package with three targets:
