@@ -10,6 +10,10 @@ struct SettingsView: View {
     @State private var notifyOnFail = true
     @State private var timeoutMinutes = 0
     @State private var confirmingClear = false
+    @State private var triageKind: ProviderKind = .ollama
+    @State private var triageModel = ""
+    @State private var triageKey = ""
+    @State private var triageBaseURL = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -81,6 +85,36 @@ struct SettingsView: View {
 
                 Divider().padding(.vertical, 4)
 
+                Text("AI Triage")
+                    .font(.subheadline.weight(.semibold))
+                Text("Powers the “Explain with AI” button on a failed run. Local models (Ollama/LM Studio) need no key and cost nothing; xAI/Anthropic need an API key (stored in the Keychain).")
+                    .font(.caption).foregroundStyle(.secondary)
+                Picker("Provider", selection: $triageKind) {
+                    ForEach(ProviderKind.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                }
+                .onChange(of: triageKind) { _, kind in
+                    if let first = ModelProvider.suggestedModels(for: kind).first { triageModel = first }
+                    triageKey = model.triageKey(for: kind)
+                }
+                TextField("model id (e.g. grok-4, llama3.2:3b)", text: $triageModel)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.caption, design: .monospaced))
+                if !triageKind.isLocal {
+                    SecureField(triageKind == .anthropic ? "ANTHROPIC_API_KEY" : "API key", text: $triageKey)
+                        .textFieldStyle(.roundedBorder)
+                }
+                if triageKind == .openAICompatible {
+                    TextField("base URL (http://host:port/v1)", text: $triageBaseURL)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(.caption, design: .monospaced))
+                }
+                Text(triageKind == .xai
+                     ? "Tip: an xAI key is created at console.x.ai (pay-per-token). A SuperGrok subscription is separate."
+                     : (triageKind.isLocal ? "No key needed — just make sure the local server is running." : ""))
+                    .font(.caption2).foregroundStyle(.secondary)
+
+                Divider().padding(.vertical, 4)
+
                 Text("Storage")
                     .font(.subheadline.weight(.semibold))
                 Button {
@@ -106,13 +140,17 @@ struct SettingsView: View {
                     JobRepository.setFlueRoots(roots)
                     model.setNotifyOnFail(notifyOnFail)
                     model.setTimeoutMinutes(timeoutMinutes)
+                    model.triageProviderKind = triageKind   // set kind first…
+                    model.triageModelID = triageModel
+                    model.triageBaseURL = triageBaseURL
+                    model.triageAPIKey = triageKey          // …so the key stores under it
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
             }
             .padding()
         }
-        .frame(width: 520, height: 600)
+        .frame(width: 520, height: 760)
         .confirmationDialog("Clear all run history?", isPresented: $confirmingClear, titleVisibility: .visible) {
             Button("Clear History", role: .destructive) { model.clearRunHistory() }
             Button("Cancel", role: .cancel) {}
@@ -122,6 +160,10 @@ struct SettingsView: View {
         .onAppear {
             notifyOnFail = model.getNotifyOnFail()
             timeoutMinutes = model.getTimeoutMinutes()
+            triageKind = model.triageProviderKind
+            triageModel = model.triageModelID
+            triageBaseURL = model.triageBaseURL
+            triageKey = model.triageAPIKey
         }
     }
 

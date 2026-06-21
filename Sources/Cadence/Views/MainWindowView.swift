@@ -31,6 +31,8 @@ struct MainWindowView: View {
                     Button("New launchd Job…", systemImage: "gearshape.2") { model.showingNewLaunchd = true }
                     Button("New Agent Job…", systemImage: "brain.head.profile") { model.showingNewAgent = true }
                     Button("Schedule Flue Agent…", systemImage: "sparkles") { model.showingNewFlue = true }
+                    Divider()
+                    Button("Browse Recipes…", systemImage: "square.grid.2x2") { model.showingRecipeGallery = true }
                 } label: {
                     Label("Add Job", systemImage: "plus")
                 }
@@ -81,6 +83,9 @@ struct MainWindowView: View {
         }
         .sheet(isPresented: $model.showingNewAgent) {
             NewAgentJobView(model: model)
+        }
+        .sheet(isPresented: $model.showingRecipeGallery) {
+            RecipeGalleryView(model: model)
         }
         .sheet(isPresented: $model.showingActivity) {
             ActivityView(model: model)

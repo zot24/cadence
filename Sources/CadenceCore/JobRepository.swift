@@ -318,6 +318,13 @@ public final class JobRepository: @unchecked Sendable {
         return try CronWriter.addJob(schedule: schedule, command: command, label: agent.name, adopt: true)
     }
 
+    /// Schedule an arbitrary agent command as a tracked (adopted) cron job —
+    /// the runtime-agnostic path used by `RecipeInstaller`.
+    @discardableResult
+    public func scheduleTrackedCommand(command: String, label: String, schedule: String) throws -> String {
+        try CronWriter.addJob(schedule: schedule, command: command, label: label, adopt: true)
+    }
+
     /// Create a *new* model-backed Flue agent (scaffold its source) and schedule
     /// it as a tracked local cron job — a scheduled job whose logic is an LLM agent.
     @discardableResult
@@ -325,7 +332,10 @@ public final class JobRepository: @unchecked Sendable {
                                instructions: String, schedule: String,
                                scaffoldWorkspace: Bool) throws -> String {
         if scaffoldWorkspace {
-            try FlueScaffold.scaffoldWorkspaceIfNeeded(at: project)
+            // Seed .env with the key the chosen model's provider actually needs
+            // (local/custom providers need none).
+            let envKeys = FlueScaffold.providerEnvKey(forModelSpecifier: model).map { [$0] } ?? []
+            try FlueScaffold.scaffoldWorkspaceIfNeeded(at: project, envKeys: envKeys)
         }
         try FlueScaffold.writeAgent(intoProject: project, name: name, model: model, instructions: instructions)
         let slug = FlueScaffold.sanitize(name: name)

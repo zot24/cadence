@@ -73,6 +73,9 @@ final class AppModel {
     var showingNewAgent = false
     var showingSettings = false
     var showingActivity = false
+    var showingRecipeGallery = false
+    /// A recipe chosen in the gallery, consumed by NewAgentJobView to prefill.
+    var pendingRecipe: Recipe?
 
     private let repository: JobRepository?
 
@@ -285,4 +288,98 @@ final class AppModel {
     }
 
     func dismissError() { lastError = nil }
+
+    // MARK: - Recipe registry
+
+    /// Recipes shown in the gallery (non-experimental runtimes).
+    var shippableRecipes: [Recipe] { RecipeCatalog.shippable }
+
+    /// Install a recipe into a project with the chosen provider + cadence, then
+    /// schedule it as a tracked job.
+    func installRecipe(_ recipe: Recipe, project: URL, provider: ModelProvider,
+                       instructions: String?, schedule: String, scaffoldWorkspace: Bool) {
+        guard let repository else { return }
+        Task.detached(priority: .userInitiated) {
+            do {
+                _ = try RecipeInstaller.install(recipe, into: project, provider: provider,
+                                                instructions: instructions, schedule: schedule,
+                                                scaffoldWorkspace: scaffoldWorkspace, repository: repository)
+            } catch {
+                await MainActor.run { self.lastError = "\(error)" }
+            }
+            await MainActor.run { self.refresh() }
+        }
+    }
+
+    // MARK: - AI triage provider ("Explain this failure with a model")
+
+    private static let triageKindKey = "com.cadence.triage.kind"
+    private static let triageModelKey = "com.cadence.triage.model"
+    private static let triageBaseURLKey = "com.cadence.triage.baseURL"
+
+    var triageProviderKind: ProviderKind {
+        get { ProviderKind(rawValue: UserDefaults.standard.string(forKey: Self.triageKindKey) ?? "") ?? .ollama }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: Self.triageKindKey) }
+    }
+    var triageModelID: String {
+        get { UserDefaults.standard.string(forKey: Self.triageModelKey) ?? "llama3.2:3b" }
+        set { UserDefaults.standard.set(newValue, forKey: Self.triageModelKey) }
+    }
+    var triageBaseURL: String {
+        get { UserDefaults.standard.string(forKey: Self.triageBaseURLKey) ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: Self.triageBaseURLKey) }
+    }
+    /// Stored in the Keychain, keyed per provider so switching providers keeps keys.
+    var triageAPIKey: String {
+        get { Keychain.get("triage-\(triageProviderKind.rawValue)") ?? "" }
+        set { Keychain.set(newValue, for: "triage-\(triageProviderKind.rawValue)") }
+    }
+    /// The stored key for a specific provider — used by Settings when switching.
+    func triageKey(for kind: ProviderKind) -> String { Keychain.get("triage-\(kind.rawValue)") ?? "" }
+
+    var triageProvider: ModelProvider {
+        ModelProvider(kind: triageProviderKind, modelID: triageModelID,
+                      baseURLOverride: triageBaseURL.isEmpty ? nil : URL(string: triageBaseURL),
+                      apiKeyValue: triageAPIKey.isEmpty ? nil : triageAPIKey)
+    }
+
+    enum TriageError: LocalizedError {
+        case notConfigured, http(String), unparseable
+        var errorDescription: String? {
+            switch self {
+            case .notConfigured: return "No triage model is configured (Settings → AI triage)."
+            case .http(let m): return "The model API returned an error — \(m)"
+            case .unparseable: return "Couldn't read the model's response."
+            }
+        }
+    }
+
+    /// Ask the configured model to explain a failed run. The prompt-building and
+    /// response-parsing are pure CadenceCore helpers; this performs the call.
+    func explainFailure(job: Job, run: JobRun) async throws -> String {
+        let provider = triageProvider
+        guard let endpoint = provider.triageEndpoint() else { throw TriageError.notConfigured }
+        let stderr = logText(at: run.stderrPath)
+        let stdout = logText(at: run.stdoutPath)
+        let timedOut = run.exitCode == 124
+        let det = FailureTriage.diagnose(exitCode: run.exitCode, stderr: stderr, stdout: stdout,
+                                         command: job.command, timedOut: timedOut)
+        let (system, user) = ModelTriage.messages(command: job.command, stderr: stderr, stdout: stdout,
+                                                   exitCode: run.exitCode, timedOut: timedOut, deterministic: det)
+        var req = URLRequest(url: endpoint.url)
+        req.httpMethod = "POST"
+        for (k, v) in endpoint.headers { req.setValue(v, forHTTPHeaderField: k) }
+        req.httpBody = try ModelTriage.requestBody(provider: provider, system: system, user: user)
+        req.timeoutInterval = 60
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? -1
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw TriageError.http("HTTP \(code): \(body.prefix(200))")
+        }
+        guard let answer = ModelTriage.parseAnswer(provider: provider, data: data) else {
+            throw TriageError.unparseable
+        }
+        return answer
+    }
 }

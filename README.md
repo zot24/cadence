@@ -49,15 +49,25 @@ fills the gap.
   API key is set in `.env` — and shows the one-line fix for whatever's missing. Turns a silent
   scheduled failure into an obvious checklist.
 - **Model-backed Agent Jobs.** Create a *new* scheduled job whose logic is an LLM agent: name it,
-  pick a model (e.g. `anthropic/claude-sonnet-4-6`), write its instructions, and Cadence scaffolds
-  a Flue agent and schedules it locally as a tracked cron job — a cron job with an agent behind it.
-  Start from a **template** (news digest, inbox triage, repo watcher, standup summary, backup
-  verifier, spend watcher) to go from idea to scheduled agent in two clicks.
+  pick a **provider** (Anthropic, xAI/Grok, or a **local model** via Ollama / LM Studio), choose
+  the model, write its instructions, and Cadence scaffolds a Flue agent and schedules it locally as
+  a tracked cron job — a cron job with an agent behind it. Local models need no API key and cost
+  nothing; key-based providers get the right key seeded into the project `.env` automatically.
+- **Recipe gallery (shadcn/agentcn-style).** A browsable catalog of agent **recipes** (news digest,
+  inbox triage, repo watcher, standup summary, backup verifier, spend watcher, fleet monitor…). Pick
+  one and it prefills the New Agent Job sheet — model, instructions, cadence, env requirements — so
+  you go from catalog to a scheduled, tracked local agent in a couple of clicks. Built on a
+  runtime-agnostic `AgentRuntime` layer (Flue today; **Eve** scaffolding present but gated as
+  experimental until its cron-friendly run path is verified).
 - **Failure diagnosis (triage).** When a tracked run fails, the detail view shows a **Diagnosis**:
   the likely category (command-not-found, permission denied, auth/API-key missing, rate limited,
   network error, timeout, missing dependency…) with a concrete fix — tuned for the minimal
-  cron/launchd environment where scheduled agents actually break. Deterministic today; a clean
-  hook for a model-backed triage agent next.
+  cron/launchd environment where scheduled agents actually break. This deterministic, zero-cost
+  diagnosis is always on; an **"Explain with AI"** button layers a model on top — it sends the
+  failed run's command + logs to your configured provider (Anthropic, xAI/Grok, or a **local
+  model** via Ollama/LM Studio) and writes a plain-English cause + fix. Configure the triage
+  provider in Settings; the API key is stored in the macOS **Keychain**, and local models make it
+  free to run.
 - **Failure notifications.** When a tracked job exits non-zero, the recorder posts a macOS
   notification (with the failing stderr line) so agent-triggered, unattended jobs don't fail
   silently. Toggle in Settings.
@@ -101,6 +111,18 @@ swift run Cadence
 # Tests:
 swift test
 ```
+
+## Install
+
+### Homebrew (tap)
+
+```bash
+brew install --cask zot24/cadence/cadence
+```
+
+This taps [`zot24/homebrew-cadence`](https://github.com/zot24/homebrew-cadence) and installs the
+latest release `.dmg`. The app is **ad-hoc signed** (not yet notarized), so on first launch use
+right-click → **Open** (or `xattr -dr com.apple.quarantine /Applications/Cadence.app`).
 
 ## Distribution
 
@@ -180,6 +202,8 @@ identically — you just gain run counts, logs, and history.
 v0.1 — working foundation. cron is fully manageable (create/edit/enable/adopt/delete);
 launchd is discovered with enable/disable/run-now/reveal and **reversible run-tracking adoption
 for user agents** (`~/Library/LaunchAgents`) — Cadence rewrites `ProgramArguments` to wrap the
-recorder and reloads the job; Flue agents can be discovered, scheduled, and created. Roadmap:
-launchd job creation/plist editing, privileged adoption for global/system jobs, an app icon, and
-Flue durable-run log integration.
+recorder and reloads the job; Flue agents can be discovered, scheduled, and created across multiple
+model providers (Anthropic, xAI/Grok, local Ollama/LM Studio), browsable via the recipe gallery,
+with a model-backed "Explain with AI" failure triage. Roadmap: launchd job creation/plist editing,
+privileged adoption for global/system jobs, verified **Eve** runtime support (needs Node ≥ 24 + a
+cron-friendly one-shot run command), and Flue durable-run log integration.

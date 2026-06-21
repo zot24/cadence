@@ -14,6 +14,9 @@ struct JobDetailView: View {
     @State private var readiness: [ReadinessCheck] = []
     @State private var triage: TriageResult?
     @State private var reschedule: RescheduleRequest?
+    @State private var aiExplanation: String?
+    @State private var aiTriageLoading = false
+    @State private var aiTriageError: String?
 
     enum LogStream: String, CaseIterable { case stdout = "Output", stderr = "Errors" }
 
@@ -43,7 +46,10 @@ struct JobDetailView: View {
         }
         .navigationTitle(job.label)
         .task(id: job.id) { reload() }
-        .onChange(of: selectedRunID) { _, _ in triage = computeTriage() }
+        .onChange(of: selectedRunID) { _, _ in
+            triage = computeTriage()
+            aiExplanation = nil; aiTriageError = nil
+        }
         .sheet(isPresented: $showingEnv) {
             EnvEditorView(model: model, job: job)
         }
@@ -63,6 +69,7 @@ struct JobDetailView: View {
         readiness = (job.source == .flue && job.flueProjectPath != nil) ? model.flueReadiness(job) : []
         reschedule = computeReschedule()
         triage = computeTriage()
+        aiExplanation = nil; aiTriageError = nil
     }
 
     // MARK: - Header
@@ -441,10 +448,49 @@ struct JobDetailView: View {
                     .font(.callout)
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+
+                Divider().padding(.vertical, 2)
+
+                HStack(spacing: 8) {
+                    Button { explainWithAI() } label: {
+                        Label(aiTriageLoading ? "Asking \(model.triageProviderKind.displayName)…" : "Explain with AI",
+                              systemImage: "sparkles")
+                    }
+                    .disabled(aiTriageLoading)
+                    Text("model: \(model.triageProviderKind.displayName)")
+                        .font(.caption2).foregroundStyle(.secondary)
+                    Spacer()
+                }
+
+                if let aiExplanation {
+                    Text(aiExplanation)
+                        .font(.callout)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                        .background(.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                }
+                if let aiTriageError {
+                    Label(aiTriageError, systemImage: "exclamationmark.triangle")
+                        .font(.caption).foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+        }
+    }
+
+    /// Kick off the model-backed explanation for the selected failed run.
+    private func explainWithAI() {
+        guard let run = runs.first(where: { $0.id == selectedRunID }) else { return }
+        aiTriageLoading = true
+        aiTriageError = nil
+        Task {
+            do { aiExplanation = try await model.explainFailure(job: job, run: run) }
+            catch { aiTriageError = error.localizedDescription }
+            aiTriageLoading = false
         }
     }
 

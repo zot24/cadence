@@ -8,12 +8,29 @@ struct NewAgentJobView: View {
     @Bindable var model: AppModel
     @Environment(\.dismiss) private var dismiss
 
-    private static let lastModelKey = "com.cadence.lastModel"
+    private static let lastProviderKey = "com.cadence.lastProviderKind"
+    private static let lastModelKey = "com.cadence.lastBareModel"
 
     @State private var name = ""
-    @State private var modelID = UserDefaults.standard.string(forKey: NewAgentJobView.lastModelKey) ?? FlueScaffold.defaultModel
+    @State private var providerKind: ProviderKind =
+        ProviderKind(rawValue: UserDefaults.standard.string(forKey: NewAgentJobView.lastProviderKey) ?? "") ?? .anthropic
+    @State private var bareModel = UserDefaults.standard.string(forKey: NewAgentJobView.lastModelKey) ?? "claude-sonnet-4-6"
     @State private var instructions = ""
     @State private var cronExpr = "0 9 * * *"
+
+    /// The "provider/model" specifier Flue's createAgent expects.
+    private var modelSpecifier: String {
+        ModelProvider(kind: providerKind, modelID: bareModel).flueModelSpecifier
+    }
+    private var providerNote: String {
+        if providerKind.isLocal {
+            return "Runs as \(modelSpecifier) against a local server — no API key needed (make sure it's running)."
+        }
+        if let key = ModelProvider(kind: providerKind, modelID: bareModel).envKeyName {
+            return "Runs as \(modelSpecifier); Cadence seeds \(key)= into the project .env."
+        }
+        return "Runs as \(modelSpecifier)."
+    }
 
     @State private var projects: [FlueProject] = []
     @State private var loading = true
@@ -30,7 +47,7 @@ struct NewAgentJobView: View {
     private var isValid: Bool {
         !FlueScaffold.sanitize(name: name).isEmpty
         && !instructions.trimmingCharacters(in: .whitespaces).isEmpty
-        && !modelID.trimmingCharacters(in: .whitespaces).isEmpty
+        && !bareModel.trimmingCharacters(in: .whitespaces).isEmpty
         && targetURL != nil
         && CronExpression(cronExpr) != nil
     }
@@ -67,17 +84,26 @@ struct NewAgentJobView: View {
                         }
                     }
 
-                    field("Model") {
-                        Picker("", selection: $modelID) {
-                            ForEach(FlueScaffold.suggestedModels, id: \.self) { Text($0).tag($0) }
-                            if !FlueScaffold.suggestedModels.contains(modelID) {
-                                Text(modelID).tag(modelID)
-                            }
+                    field("Model provider") {
+                        Picker("", selection: $providerKind) {
+                            ForEach(ProviderKind.allCases, id: \.self) { Text($0.displayName).tag($0) }
                         }
                         .labelsHidden()
-                        TextField("provider/model-id", text: $modelID)
+                        .onChange(of: providerKind) { _, kind in
+                            if let first = ModelProvider.suggestedModels(for: kind).first { bareModel = first }
+                        }
+                        let suggestions = ModelProvider.suggestedModels(for: providerKind)
+                        if !suggestions.isEmpty {
+                            Picker("", selection: $bareModel) {
+                                ForEach(suggestions, id: \.self) { Text($0).tag($0) }
+                                if !suggestions.contains(bareModel) { Text(bareModel).tag(bareModel) }
+                            }
+                            .labelsHidden()
+                        }
+                        TextField("model-id", text: $bareModel)
                             .textFieldStyle(.roundedBorder)
                             .font(.system(.caption, design: .monospaced))
+                        Text(providerNote).font(.caption2).foregroundStyle(.secondary)
                     }
 
                     field("Instructions (what the agent should do)") {
@@ -119,8 +145,9 @@ struct NewAgentJobView: View {
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("Create Agent Job") {
                     if let url = targetURL {
-                        UserDefaults.standard.set(modelID, forKey: NewAgentJobView.lastModelKey)
-                        model.createAgentJob(project: url, name: name, model: modelID,
+                        UserDefaults.standard.set(providerKind.rawValue, forKey: NewAgentJobView.lastProviderKey)
+                        UserDefaults.standard.set(bareModel, forKey: NewAgentJobView.lastModelKey)
+                        model.createAgentJob(project: url, name: name, model: modelSpecifier,
                                              instructions: instructions, schedule: cronExpr,
                                              scaffoldWorkspace: needsSetup)
                     }
@@ -133,6 +160,9 @@ struct NewAgentJobView: View {
         }
         .frame(width: 560, height: 640)
         .task { await loadProjects() }
+        .onAppear {
+            if let r = model.pendingRecipe { applyRecipe(r); model.pendingRecipe = nil }
+        }
     }
 
     @ViewBuilder
@@ -190,6 +220,29 @@ struct NewAgentJobView: View {
         name = t.name
         instructions = t.instructions
         cronExpr = t.suggestedCron
+    }
+
+    private func applyRecipe(_ r: Recipe) {
+        name = r.slug
+        instructions = r.instructions ?? ""
+        cronExpr = r.suggestedCron
+        if let m = r.model {
+            let parts = m.split(separator: "/", maxSplits: 1).map(String.init)
+            if parts.count == 2 {
+                if let k = kind(forPrefix: parts[0]) { providerKind = k }
+                bareModel = parts[1]
+            }
+        }
+    }
+
+    private func kind(forPrefix p: String) -> ProviderKind? {
+        switch p.lowercased() {
+        case "anthropic": return .anthropic
+        case "xai":       return .xai
+        case "ollama":    return .ollama
+        case "lmstudio":  return .lmStudio
+        default:          return nil
+        }
     }
 
     private func loadProjects() async {
